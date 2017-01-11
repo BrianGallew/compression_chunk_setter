@@ -15,13 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JMXConnection {
-    private static final Logger logger = LoggerFactory.getLogger(JMXConnection.class);
-    int retries = 2;
-    int trial = 0;
     JMXServiceURL url;
     MBeanServerConnection mbsc;
 
@@ -29,7 +24,7 @@ public class JMXConnection {
         try {
             url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:7199/jmxrmi");
         } catch (java.net.MalformedURLException the_exception) {
-            logger.error("Improperly formed URL: {} ", the_exception);
+            System.out.println("Improperly formed URL:  " + the_exception.toString());
             System.exit(1);
         }
         connect();
@@ -41,7 +36,7 @@ public class JMXConnection {
             JMXConnector jmxc = JMXConnectorFactory.connect(url, null);
             mbsc = jmxc.getMBeanServerConnection();
         } catch (java.io.IOException the_exception) {
-            logger.error("Unable to connect to Cassandra: {} ", the_exception);
+            System.out.println("Unable to connect to Cassandra: " + the_exception.toString());
             System.exit(2);
         }
     }
@@ -50,16 +45,10 @@ public class JMXConnection {
     public Map getMap(String key, String attribute) {
         // Extract/return a Map attribute.
         try {
-            HashMap retval = (HashMap) mbsc.getAttribute(new ObjectName(key), attribute);
-            trial = 0;
-            return retval;
+            return (HashMap) mbsc.getAttribute(new ObjectName(key), attribute);
         } catch (Exception the_exception) {
-            trial = trial + 1;
-            if (trial < retries) {
-                connect();
-                return getMap(key, attribute);
-            }
-            logger.error("Error reading bean {}: {}", key, the_exception);
+            System.out.println("Error reading bean " + key + " : " + the_exception.toString());
+            System.exit(2);
         }
         return new HashMap();
     }
@@ -72,7 +61,7 @@ public class JMXConnection {
 	    mbsc.setAttribute(new ObjectName(key), new Attribute(attribute, value));
         } catch (Exception the_exception) {
 	    System.out.println(the_exception);
-            logger.error("Error writing bean {}: {}", key, the_exception);
+            System.out.println("Error writing bean " + key + " : " + the_exception.toString());
 	    System.exit(3);
         }
     }
